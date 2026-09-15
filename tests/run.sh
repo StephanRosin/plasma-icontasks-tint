@@ -5,6 +5,16 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FAILED=0
 
+# Bevorzugt den Qt6-qml-Interpreter. Die Komponenten nutzen unversionierte
+# "import QtQuick"-Direktiven (Qt6-Stil, so auch in der finalen Plasma-6-Datei).
+# Auf dieser Maschine loest der blanke Befehl "qml" auf den parallel installierten
+# Qt5-qml (/usr/bin/qml, qt5-declarative) auf, der unversionierte Imports
+# stillschweigend nicht laedt (Abbruch ohne Fehlermeldung). Der Qt6-qml liegt
+# hier unter /usr/lib/qt6/bin/qml; falls nicht vorhanden, faellt es auf den
+# blanken Befehl zurueck.
+QML_BIN="qml"
+[[ -x /usr/lib/qt6/bin/qml ]] && QML_BIN="/usr/lib/qt6/bin/qml"
+
 ok()   { printf '  ok   %s\n' "$1"; }
 fail() { printf '  FAIL %s\n' "$1"; FAILED=1; }
 
@@ -37,8 +47,11 @@ test_extract() {
 qml_test() {
     local name="$1" datei="$2" ausgabe
     printf '%s\n' "$name"
-    ausgabe="$(qml -platform offscreen "$datei" 2>&1)"
+    # QT_FORCE_STDERR_LOGGING: ohne Terminal schreibt Qt console.log/qWarning
+    # sonst ins Journal statt nach stderr, und die ok/FAIL-Zeilen blieben unsichtbar.
+    ausgabe="$(QT_FORCE_STDERR_LOGGING=1 "$QML_BIN" -platform offscreen "$datei" 2>&1)"
     local code=$?
+    ausgabe="${ausgabe//qml: /}"  # Logging-Kategorie-Praefix wieder abstreifen
     printf '%s\n' "$ausgabe" | grep -E '^[[:space:]]+(ok|FAIL)' || true
     if [[ "$code" -eq 0 ]]; then
         ok "alle Zusicherungen erfuellt"
