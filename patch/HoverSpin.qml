@@ -7,7 +7,7 @@
 
     Bewusst RotationAnimation statt RotationAnimator: Animator-Typen laufen im Render-Thread
     und aktualisieren die QML-Eigenschaft waehrend der Animation nicht. Dann laese
-    beiRuhe() einen veralteten Winkel und das Zurueckdrehen sprigne.
+    beiRuhe() einen veralteten Winkel und das Zurueckdrehen spraenge.
 */
 import QtQuick
 
@@ -30,6 +30,14 @@ Item {
     visible: false
 
     onHoveredChanged: hovered ? beiHover() : beiRuhe()
+
+    // onHoveredChanged feuert nicht fuer den bei der Objekterstellung deklarativ
+    // gesetzten Wert (z. B. "HoverSpin { target: icon; hovered: task.highlighted }",
+    // wenn task.highlighted schon beim Erzeugen true ist). Ohne diesen Ausgleich
+    // bliebe das Symbol reglos, bis hovered zum ersten Mal wechselt - das passiert im
+    // echten Panel, wenn die Maus schon ueber der Leiste steht, waehrend Plasma die
+    // Symbole aufbaut.
+    Component.onCompleted: if (hovered) { beiHover(); }
 
     function beiHover() {
         if (!target) {
