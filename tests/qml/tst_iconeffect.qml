@@ -57,7 +57,7 @@ Item {
                 root.check(e !== null, "Effekt ist eingehaengt");
                 root.check(Math.abs(e.saturation) < 0.01, "Ruhe: Saettigung neutral (Toenung darf nicht zerstoert werden)");
                 root.check(Math.abs(e.colorization - 1.0) < 0.01, "Ruhe: voll getoent");
-                root.check(e.colorizationColor.toString() === "#9b6dff", "Ruhe: Toenung ist das Violett");
+                root.check(e.colorizationColor.toString() === "#3daee9", "Ruhe: Toenung ist das Akzentblau");
                 root.gehovert = true;
             }
         }
