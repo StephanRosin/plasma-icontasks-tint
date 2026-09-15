@@ -100,12 +100,207 @@ test_patch() {
         || ok "kein Verweis auf das Bibliotheksmodul mehr in Task.qml"
 }
 
+test_migrate() {
+    printf 'migrate.py\n'
+    local out; out="$(mktemp -d)"
+    trap 'rm -rf "$out"' RETURN
+    local datei="$out/appletsrc"
+
+    # Nachbau der echten Struktur: zwei Leisten mit dem alten Widget, eine davon
+    # mit angehefteten Startern, dazu ein fremdes Widget das unberuehrt bleiben muss.
+    cat > "$datei" <<'ENDE'
+[Containments][46][Applets][79]
+immutability=1
+plugin=org.kde.plasma.icontasks
+
+[Containments][46][Applets][79][Configuration][General]
+groupingStrategy=0
+launchers=applications:systemsettings.desktop,applications:code.desktop
+
+[Containments][46][Applets][65]
+plugin=org.kde.plasma.showdesktop
+
+[Containments][69][Applets][117]
+plugin=org.kde.plasma.icontasks
+
+[Containments][69][Applets][117][Configuration][General]
+launchers=
+ENDE
+
+    python3 "$ROOT/migrate.py" --pruefen "$datei" >/dev/null 2>&1 \
+        && ok "laeuft durch" || { fail "Aufruf schlaegt fehl"; return; }
+
+    [[ "$(grep -c '^plugin=ch.sterostxc.icontasks-tint$' "$datei")" -eq 2 ]] \
+        && ok "beide Leisten umgestellt" \
+        || fail "es wurden nicht genau zwei Widgets umgestellt"
+
+    grep -q '^plugin=org.kde.plasma.icontasks$' "$datei" \
+        && fail "altes Widget steht noch in der Datei" \
+        || ok "kein altes Widget mehr uebrig"
+
+    grep -q '^plugin=org.kde.plasma.showdesktop$' "$datei" \
+        && ok "fremdes Widget unberuehrt" \
+        || fail "fremdes Widget wurde mitveraendert"
+
+    grep -q '^launchers=applications:systemsettings.desktop,applications:code.desktop$' "$datei" \
+        && ok "angeheftete Starter unveraendert" \
+        || fail "die angehefteten Starter sind verlorengegangen"
+
+    # Der Abschnittskopf darf sich nicht verschieben - sonst findet Plasma die
+    # Einstellungen des Applets nicht mehr.
+    grep -q '^\[Containments\]\[46\]\[Applets\]\[79\]\[Configuration\]\[General\]$' "$datei" \
+        && ok "Abschnittsnamen unveraendert" \
+        || fail "ein Abschnittsname hat sich geaendert"
+
+    # --- Zusaetzliche Grenzfaelle: das Skript muss abbrechen statt zu raten ---
+
+    # Zweiter Lauf auf der bereits migrierten Datei: kein zweiter Schaden, kein
+    # stillschweigendes Nochmal-Schreiben.
+    local vorher; vorher="$(cat "$datei")"
+    if python3 "$ROOT/migrate.py" --pruefen "$datei" >/dev/null 2>&1; then
+        fail "zweiter Lauf auf bereits migrierter Datei meldet faelschlich Erfolg"
+    else
+        ok "zweiter Lauf auf bereits migrierter Datei bricht ab"
+    fi
+    [[ "$(cat "$datei")" == "$vorher" ]] \
+        && ok "zweiter Lauf ist idempotent - Datei unveraendert" \
+        || fail "zweiter Lauf hat die bereits migrierte Datei doch noch veraendert"
+
+    # Keine passende Zeile vorhanden.
+    local leer="$out/leer"
+    cat > "$leer" <<'ENDE'
+[Containments][46][Applets][65]
+plugin=org.kde.plasma.showdesktop
+ENDE
+    local leer_vorher; leer_vorher="$(cat "$leer")"
+    if python3 "$ROOT/migrate.py" --pruefen "$leer" >/dev/null 2>&1; then
+        fail "laeuft trotz fehlendem altem Widget durch"
+    else
+        ok "kein Widget gefunden - bricht ab statt zu raten"
+    fi
+    [[ "$(cat "$leer")" == "$leer_vorher" ]] \
+        && ok "Datei ohne Treffer bleibt unveraendert" \
+        || fail "Datei ohne Treffer wurde trotzdem angefasst"
+
+    # Mehr Treffer als die erwarteten zwei: lieber ganz abbrechen als raten,
+    # welche der drei gemeint sind.
+    local zuviel="$out/zuviel"
+    cat > "$zuviel" <<'ENDE'
+[Containments][46][Applets][79]
+plugin=org.kde.plasma.icontasks
+
+[Containments][69][Applets][117]
+plugin=org.kde.plasma.icontasks
+
+[Containments][80][Applets][200]
+plugin=org.kde.plasma.icontasks
+ENDE
+    local vorher_zuviel; vorher_zuviel="$(cat "$zuviel")"
+    if python3 "$ROOT/migrate.py" --pruefen "$zuviel" >/dev/null 2>&1; then
+        fail "laeuft trotz unerwarteter Anzahl (3 statt 2) durch"
+    else
+        ok "unerwartete Anzahl Treffer - bricht ab statt zu raten"
+    fi
+    [[ "$(cat "$zuviel")" == "$vorher_zuviel" ]] \
+        && ok "Datei bei unerwarteter Anzahl komplett unveraendert" \
+        || fail "Datei wurde trotz Abbruch teilweise migriert"
+
+    # Zeilen, die den Plugin-Namen nur als Teilstring enthalten (Kommentar,
+    # andere Schluessel, Starternamen), duerfen nicht mitgezaehlt oder veraendert werden.
+    local mischmasch="$out/mischmasch"
+    cat > "$mischmasch" <<'ENDE'
+# Hinweis: frueher stand hier plugin=org.kde.plasma.icontasks als Kommentar
+iconTasksBackupPlugin=org.kde.plasma.icontasks
+
+[Containments][46][Applets][79]
+plugin=org.kde.plasma.icontasks
+
+[Containments][69][Applets][117]
+plugin=org.kde.plasma.icontasks
+
+[Containments][46][Applets][79][Configuration][General]
+launchers=applications:org.kde.plasma.icontasks-lookalike.desktop
+ENDE
+    local kommentar_vorher; kommentar_vorher="$(grep '^# Hinweis' "$mischmasch")"
+    local fremdschluessel_vorher; fremdschluessel_vorher="$(grep '^iconTasksBackupPlugin=' "$mischmasch")"
+    local starter_vorher; starter_vorher="$(grep '^launchers=' "$mischmasch")"
+
+    python3 "$ROOT/migrate.py" --pruefen "$mischmasch" >/dev/null 2>&1 \
+        && ok "laeuft trotz aehnlicher Teilstrings durch" \
+        || fail "bricht trotz genau zweier echter Treffer faelschlich ab"
+
+    [[ "$(grep -c '^plugin=ch.sterostxc.icontasks-tint$' "$mischmasch")" -eq 2 ]] \
+        && ok "genau die zwei echten Zeilen umgestellt" \
+        || fail "nicht genau zwei echte Treffer umgestellt"
+
+    [[ "$(grep '^# Hinweis' "$mischmasch")" == "$kommentar_vorher" ]] \
+        && ok "Kommentar mit gleichem Teilstring unveraendert" \
+        || fail "Kommentarzeile wurde faelschlich mitveraendert"
+
+    [[ "$(grep '^iconTasksBackupPlugin=' "$mischmasch")" == "$fremdschluessel_vorher" ]] \
+        && ok "andere Schluesselzeile mit gleichem Teilstring unveraendert" \
+        || fail "eine fremde Schluesselzeile wurde faelschlich mitveraendert"
+
+    [[ "$(grep '^launchers=' "$mischmasch")" == "$starter_vorher" ]] \
+        && ok "Starterzeile mit gleichem Teilstring unveraendert" \
+        || fail "eine Starterzeile wurde faelschlich mitveraendert"
+
+    # --zurueck ohne je angelegte Sicherung: muss abbrechen, darf die Zieldatei
+    # nicht anfassen. Ueber --pruefen simuliert, damit weder die echte Konfiguration
+    # noch plasmashell/systemctl beruehrt werden.
+    local keine_sicherung="$out/keine-sicherung"
+    printf 'platzhalter\n' > "$keine_sicherung"
+    if python3 "$ROOT/migrate.py" --zurueck --pruefen "$keine_sicherung" >/dev/null 2>&1; then
+        fail "--zurueck laeuft ohne Sicherung trotzdem durch"
+    else
+        ok "--zurueck ohne Sicherung bricht ab"
+    fi
+    [[ "$(cat "$keine_sicherung")" == "platzhalter" ]] \
+        && ok "Zieldatei bei fehlender Sicherung unveraendert" \
+        || fail "Zieldatei wurde trotz fehlender Sicherung veraendert"
+
+    # Sicherung vorhanden, aber die Konfiguration wurde seit der Migration erneut
+    # veraendert (Pruefsumme passt nicht mehr): Wiederherstellen darf diese
+    # zwischenzeitliche Aenderung nicht stillschweigend verwerfen.
+    local veraendert="$out/veraendert"
+    printf 'stand-nach-migration-und-weiterer-aenderung\n' > "$veraendert"
+    printf 'stand-vor-migration\n' > "$veraendert.vor-migration"
+    printf 'falsche-pruefsumme-simuliert-veraltete-sicherung\n' > "$veraendert.vor-migration.stand"
+    local veraendert_vorher; veraendert_vorher="$(cat "$veraendert")"
+    if python3 "$ROOT/migrate.py" --zurueck --pruefen "$veraendert" >/dev/null 2>&1; then
+        fail "--zurueck stellt trotz nicht passender Pruefsumme wieder her"
+    else
+        ok "--zurueck bricht bei nicht passender Pruefsumme ab"
+    fi
+    [[ "$(cat "$veraendert")" == "$veraendert_vorher" ]] \
+        && ok "zwischenzeitliche Aenderung bleibt bei Abbruch erhalten" \
+        || fail "zwischenzeitliche Aenderung wurde stillschweigend verworfen"
+
+    # Gutfall: Sicherung und Pruefsumme passen zusammen - Wiederherstellen muss
+    # tatsaechlich funktionieren, sonst waere die ganze Absicherung wertlos.
+    local ok_datei="$out/wiederherstellen-ok"
+    printf 'stand-nach-migration\n' > "$ok_datei"
+    printf 'stand-vor-migration\n' > "$ok_datei.vor-migration"
+    python3 -c "
+import hashlib, sys
+text = open(sys.argv[1], encoding='utf-8').read()
+open(sys.argv[1] + '.vor-migration.stand', 'w', encoding='utf-8').write(hashlib.sha256(text.encode('utf-8')).hexdigest())
+" "$ok_datei"
+    python3 "$ROOT/migrate.py" --zurueck --pruefen "$ok_datei" >/dev/null 2>&1 \
+        && ok "--zurueck laeuft bei passender Pruefsumme durch" \
+        || fail "--zurueck bricht trotz passender Pruefsumme ab"
+    [[ "$(cat "$ok_datei")" == "stand-vor-migration" ]] \
+        && ok "Wiederherstellung stellt den Stand vor der Migration her" \
+        || fail "Wiederherstellung hat nicht den Stand vor der Migration hergestellt"
+}
+
 case "${1:-all}" in
     extract)    test_extract ;;
     hoverspin)  test_hoverspin ;;
     iconeffect) test_iconeffect ;;
     patch)      test_patch ;;
-    all)        test_extract; test_hoverspin; test_iconeffect; test_patch ;;
+    migrate)    test_migrate ;;
+    all)        test_extract; test_hoverspin; test_iconeffect; test_patch; test_migrate ;;
     *)          printf 'unbekannter Test: %s\n' "$1"; exit 2 ;;
 esac
 
