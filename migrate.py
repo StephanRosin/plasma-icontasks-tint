@@ -13,6 +13,13 @@ wird - bei null oder einer unerwarteten Anzahl bricht das Skript ab, statt zu ra
 Bei `--zurueck` wird vor dem Wiederherstellen gegen eine beim Migrieren hinterlegte
 Pruefsumme abgeglichen, damit eine zwischenzeitliche Aenderung an der Konfiguration
 nicht stillschweigend verworfen wird.
+
+Dateien, die zu diesem Werkzeug gehoeren (neben der Konfiguration selbst):
+`<config>.vor-migration` (Sicherung vor der Migration) und
+`<config>.vor-migration.stand` (Pruefsumme des Standes direkt nach der Migration).
+Eine erfolgreiche Wiederherstellung (`--zurueck`) raeumt beide wieder weg - nach
+einem vollstaendigen Rueckbau (siehe uninstall.sh) bleibt so keine verwaiste Datei
+im Konfigurationsverzeichnis liegen.
 """
 
 import argparse
@@ -109,6 +116,12 @@ def wiederherstellen(ziel: Path, sicherung: Path, stand: Path,
     Bei probelauf=True (also '--zurueck --pruefen DATEI') wird nur die Testdatei
     angefasst und plasmashell nicht kontaktiert - so laesst sich diese Funktion
     gefahrlos pruefen. Ohne probelauf wirkt es auf die echte Konfiguration.
+
+    Nach einer erfolgreichen Wiederherstellung werden 'sicherung' und 'stand'
+    entfernt: Ihr Zweck ist erfuellt, und ohne diesen Aufraeumschritt bliebe nach
+    einem vollstaendigen Rueckbau eine verwaiste Datei im Konfigurationsverzeichnis
+    liegen. Ein zweiter '--zurueck'-Aufruf findet danach folgerichtig keine
+    Sicherung mehr vor, statt faelschlich eine erneute Aenderung zu behaupten.
     """
     if not sicherung.exists():
         print(f"Keine Sicherung unter {sicherung}", file=sys.stderr)
@@ -141,13 +154,17 @@ def wiederherstellen(ziel: Path, sicherung: Path, stand: Path,
 
     if probelauf:
         shutil.copy2(sicherung, ziel)
-        print(f"{ziel.name} aus der Sicherung wiederhergestellt (Probelauf)")
-        return 0
+    else:
+        shell("stop")
+        shutil.copy2(sicherung, ziel)
+        shell("start")
 
-    shell("stop")
-    shutil.copy2(sicherung, ziel)
-    shell("start")
-    print(f"{ziel.name} aus der Sicherung wiederhergestellt")
+    sicherung.unlink(missing_ok=True)
+    stand.unlink(missing_ok=True)
+
+    zusatz = " (Probelauf)" if probelauf else ""
+    print(f"{ziel.name} aus der Sicherung wiederhergestellt{zusatz}, "
+          "Sicherung und Pruefsumme aufgeraeumt")
     return 0
 
 
@@ -164,6 +181,9 @@ def main() -> int:
                         help="nur zusammen mit --zurueck: wiederherstellen, obwohl sich die "
                              "Pruefsumme nicht bestaetigen laesst oder fehlt")
     args = parser.parse_args()
+
+    if args.erzwingen and not args.zurueck:
+        parser.error("--erzwingen wirkt nur zusammen mit --zurueck und wird sonst ignoriert")
 
     if args.zurueck:
         if args.pruefen:

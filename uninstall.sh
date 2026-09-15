@@ -10,6 +10,9 @@ if [[ ! -e "$DEST" ]]; then
 fi
 
 rm -rf "$DEST"
+# ./migrate.py --zurueck raeumt seine eigene Sicherung (*.vor-migration) und
+# Pruefsumme (*.vor-migration.stand) nach erfolgreicher Wiederherstellung selbst
+# weg - hier ist dafuer nichts weiter noetig.
 printf 'Entfernt. Denk an ./migrate.py --zurueck, falls die Leisten noch\n'
 printf 'auf dieses Widget zeigen. Starte die Plasma-Shell neu ...\n'
 systemctl --user restart plasma-plasmashell

@@ -292,6 +292,39 @@ open(sys.argv[1] + '.vor-migration.stand', 'w', encoding='utf-8').write(hashlib.
     [[ "$(cat "$ok_datei")" == "stand-vor-migration" ]] \
         && ok "Wiederherstellung stellt den Stand vor der Migration her" \
         || fail "Wiederherstellung hat nicht den Stand vor der Migration hergestellt"
+
+    # Vollstaendiger Rueckbau: nach erfolgreicher Wiederherstellung duerfen keine
+    # verwaisten Dateien liegen bleiben - sonst weiss spaeter niemand mehr, wozu
+    # sie gehoeren (Fix-Runde 1).
+    [[ ! -e "$ok_datei.vor-migration" && ! -e "$ok_datei.vor-migration.stand" ]] \
+        && ok "Sicherung und Pruefsumme werden nach erfolgreicher Wiederherstellung entfernt" \
+        || fail "Sicherung oder Pruefsumme bleiben nach der Wiederherstellung als Datenmuell liegen"
+
+    # Ein zweiter --zurueck-Aufruf direkt danach darf nicht behaupten, die Datei
+    # sei "seit der Migration erneut veraendert" worden - das waere schlicht falsch,
+    # es steht dort der korrekt wiederhergestellte Ausgangszustand (Fix-Runde 1).
+    local zweite_ausgabe
+    zweite_ausgabe="$(python3 "$ROOT/migrate.py" --zurueck --pruefen "$ok_datei" 2>&1)"
+    if [[ $? -eq 0 ]]; then
+        fail "zweiter --zurueck-Aufruf nach erfolgreicher Wiederherstellung meldet faelschlich Erfolg"
+    else
+        ok "zweiter --zurueck-Aufruf nach erfolgreicher Wiederherstellung bricht ab"
+    fi
+    [[ "$zweite_ausgabe" != *"wurde seit der Migration erneut veraendert"* ]] \
+        && ok "Meldung behauptet keine erneute Veraenderung mehr, die nie stattfand" \
+        || fail "Meldung behauptet weiterhin faelschlich eine erneute Veraenderung"
+
+    # --erzwingen ohne --zurueck wirkt nirgends - das darf nicht stillschweigend
+    # geschluckt werden, sondern muss dem Aufrufer auffallen (Fix-Runde 1).
+    local erzwingen_ausgabe erzwingen_code
+    erzwingen_ausgabe="$(python3 "$ROOT/migrate.py" --pruefen "$out/nicht-vorhanden" --erzwingen 2>&1)"
+    erzwingen_code=$?
+    [[ "$erzwingen_code" -ne 0 ]] \
+        && ok "--erzwingen ohne --zurueck wird abgelehnt statt stillschweigend geschluckt" \
+        || fail "--erzwingen ohne --zurueck laeuft stillschweigend durch"
+    [[ "$erzwingen_ausgabe" == *"--erzwingen"* && "$erzwingen_ausgabe" == *"--zurueck"* ]] \
+        && ok "Meldung erklaert, dass --erzwingen nur mit --zurueck wirkt" \
+        || fail "Meldung erklaert die Ablehnung von --erzwingen nicht verstaendlich"
 }
 
 case "${1:-all}" in
