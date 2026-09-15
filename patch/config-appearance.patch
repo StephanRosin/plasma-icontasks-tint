@@ -1,22 +1,30 @@
---- a/main.xml	2026-09-15 16:27:11.936097571 +0200
-+++ b/main.xml	2026-09-15 16:27:11.979982256 +0200
-@@ -154,6 +154,14 @@
+--- a/main.xml	2026-09-15 16:45:20.740817474 +0200
++++ b/main.xml	2026-09-15 16:45:20.774084730 +0200
+@@ -154,6 +154,22 @@
        <label> Spacing between icons in task manager. Margin is multiplied by this value.</label>
        <default>1</default>
      </entry>
 +    <entry name="tintColor" type="String">
-+      <label>Farbton, in den die Symbole eingefaerbt werden.</label>
++      <label>Farbton fuer angeheftete Starter.</label>
 +      <default>#387a94</default>
 +    </entry>
 +    <entry name="tintStrength" type="Double">
-+      <label>Wie stark die Symbole eingefaerbt werden. 0 laesst sie unveraendert, 1 faerbt sie vollstaendig ein.</label>
++      <label>Staerke der Einfaerbung angehefteter Starter. 0 laesst sie unveraendert, 1 faerbt sie vollstaendig ein.</label>
++      <default>1.0</default>
++    </entry>
++    <entry name="tintColorOpen" type="String">
++      <label>Farbton fuer geoeffnete Fenster.</label>
++      <default>#387a94</default>
++    </entry>
++    <entry name="tintStrengthOpen" type="Double">
++      <label>Staerke der Einfaerbung geoeffneter Fenster.</label>
 +      <default>1.0</default>
 +    </entry>
    </group>
  
  </kcfg>
---- a/ConfigAppearance.qml	2026-09-15 16:27:11.935857527 +0200
-+++ b/ConfigAppearance.qml	2026-09-15 16:27:11.980235764 +0200
+--- a/ConfigAppearance.qml	2026-09-15 16:45:20.740558732 +0200
++++ b/ConfigAppearance.qml	2026-09-15 16:45:30.112785534 +0200
 @@ -6,8 +6,10 @@
  
  import QtQuick
@@ -28,32 +36,36 @@
  import org.kde.kirigami as Kirigami
  import org.kde.plasma.core as PlasmaCore
  import org.kde.plasma.plasmoid
-@@ -29,6 +31,8 @@
+@@ -29,6 +31,10 @@
      property alias cfg_forceStripes: forceStripes.checked
      property alias cfg_taskMaxWidth: taskMaxWidth.currentIndex
      property int cfg_iconSpacing: 0
 +    property string cfg_tintColor: "#387a94"
 +    property real cfg_tintStrength: 1.0
++    property string cfg_tintColorOpen: "#387a94"
++    property real cfg_tintStrengthOpen: 1.0
  
      Component.onCompleted: {
          /* Don't rely on bindings for checking the radiobuttons
-@@ -184,5 +188,51 @@
+@@ -184,5 +190,100 @@
                  root.cfg_iconSpacing = model[currentIndex]["spacing"];
              }
          }
 +
 +        Item {
 +            Kirigami.FormData.isSection: true
++            Kirigami.FormData.label: i18nc("@title:group", "Einfaerbung der Symbole")
 +        }
 +
 +        // Einfaerbung der Symbole. Siehe plasma-icontasks-tint.
++        // Angeheftete Starter und geoeffnete Fenster werden getrennt eingestellt.
 +        KQuickControls.ColorButton {
 +            id: tintColorButton
 +
-+            Kirigami.FormData.label: i18nc("@label:chooser", "Farbton der Symbole:")
++            Kirigami.FormData.label: i18nc("@label:chooser", "Angeheftete Starter:")
 +
 +            showAlphaChannel: false
-+            dialogTitle: i18nc("@title:window", "Farbton der Symbole")
++            dialogTitle: i18nc("@title:window", "Farbton angehefteter Starter")
 +
 +            // Einmalig setzen statt zu binden: der Farbdialog schreibt dieselbe
 +            // Eigenschaft, eine Bindung wuerde mit ihm um den Wert streiten.
@@ -62,7 +74,7 @@
 +        }
 +
 +        RowLayout {
-+            Kirigami.FormData.label: i18nc("@label:slider", "Staerke der Einfaerbung:")
++            Kirigami.FormData.label: i18nc("@label:slider", "Staerke:")
 +
 +            QQC2.Slider {
 +                id: tintStrengthSlider
@@ -86,6 +98,53 @@
 +                    text: "100 %"
 +                }
 +            }
++        }
++
++        KQuickControls.ColorButton {
++            id: tintColorOpenButton
++
++            Kirigami.FormData.label: i18nc("@label:chooser", "Geoeffnete Fenster:")
++
++            showAlphaChannel: false
++            dialogTitle: i18nc("@title:window", "Farbton geoeffneter Fenster")
++
++            Component.onCompleted: color = root.cfg_tintColorOpen
++            onAccepted: root.cfg_tintColorOpen = color.toString()
++        }
++
++        RowLayout {
++            Kirigami.FormData.label: i18nc("@label:slider", "Staerke:")
++
++            QQC2.Slider {
++                id: tintStrengthOpenSlider
++
++                Layout.fillWidth: true
++                from: 0.0
++                to: 1.0
++                stepSize: 0.05
++                value: root.cfg_tintStrengthOpen
++                onMoved: root.cfg_tintStrengthOpen = value
++            }
++
++            QQC2.Label {
++                Layout.minimumWidth: tintStrengthOpenMetrics.width
++                horizontalAlignment: Text.AlignRight
++                text: Math.round(root.cfg_tintStrengthOpen * 100) + " %"
++
++                TextMetrics {
++                    id: tintStrengthOpenMetrics
++                    font: parent.font
++                    text: "100 %"
++                }
++            }
++        }
++
++        QQC2.Label {
++            Layout.fillWidth: true
++            Layout.maximumWidth: Kirigami.Units.gridUnit * 18
++            wrapMode: Text.WordWrap
++            font: Kirigami.Theme.smallFont
++            text: i18nc("@info", "Bei Staerke 0 bleiben die Symbole unveraendert. Unter dem Mauszeiger zeigt ein Symbol immer seine echten Farben.")
 +        }
      }
  }

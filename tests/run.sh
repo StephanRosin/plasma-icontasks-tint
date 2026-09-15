@@ -103,9 +103,19 @@ test_patch() {
         && ok "Farbwaehler im Einstellungsdialog" || fail "Farbwaehler fehlt"
     grep -q 'cfg_tintStrength' "$out/ConfigAppearance.qml" \
         && ok "Staerkeregler im Einstellungsdialog" || fail "Staerkeregler fehlt"
-    grep -q 'tintColor: Plasmoid.configuration.tintColor' "$out/Task.qml" \
-        && ok "Task.qml reicht die Einstellung an IconEffect durch" \
-        || fail "Task.qml reicht die Einstellung nicht durch"
+    grep -q '<entry name="tintColorOpen"' "$out/main.xml" \
+        && ok "tintColorOpen ist als Einstellung angelegt" || fail "tintColorOpen fehlt in main.xml"
+    grep -q '<entry name="tintStrengthOpen"' "$out/main.xml" \
+        && ok "tintStrengthOpen ist als Einstellung angelegt" || fail "tintStrengthOpen fehlt in main.xml"
+    grep -q 'cfg_tintColorOpen' "$out/ConfigAppearance.qml" \
+        && ok "zweiter Farbwaehler im Einstellungsdialog" || fail "zweiter Farbwaehler fehlt"
+
+    grep -q 'task.model.IsLauncher' "$out/Task.qml" \
+        && ok "Task.qml trennt angeheftet von geoeffnet" \
+        || fail "Task.qml unterscheidet die beiden Faelle nicht"
+    grep -q 'Plasmoid.configuration.tintColorOpen' "$out/Task.qml" \
+        && ok "Task.qml reicht beide Einstellungen an IconEffect durch" \
+        || fail "Task.qml reicht die Einstellung fuer geoeffnete Fenster nicht durch"
 
     grep -q 'Qt.createComponent("tmlocal/SmartLauncherItem.qml")' "$out/Task.qml" \
         && ok "SmartLauncherItem wird lokal aufgeloest" \

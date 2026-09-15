@@ -1,5 +1,5 @@
---- a/Task.qml	2026-09-15 16:27:11.936266817 +0200
-+++ b/Task.qml	2026-09-15 16:27:17.291497505 +0200
+--- a/Task.qml	2026-09-15 16:45:20.740952881 +0200
++++ b/Task.qml	2026-09-15 16:45:20.774179133 +0200
 @@ -15,7 +15,7 @@
  import org.kde.plasma.extras as PlasmaExtras
  import org.kde.plasma.components as PlasmaComponents3
@@ -18,7 +18,7 @@
              const smartLauncher = component.createObject(task);
              component.destroy();
  
-@@ -571,6 +571,21 @@
+@@ -571,6 +571,29 @@
              enabled: true
  
              source: task.model.decoration
@@ -29,8 +29,16 @@
 +            layer.smooth: true
 +            layer.effect: IconEffect {
 +                hovered: task.highlighted
-+                tintColor: Plasmoid.configuration.tintColor
-+                tintStrength: Plasmoid.configuration.tintStrength
++                // Angeheftete Starter und geoeffnete Fenster lassen sich getrennt
++                // einfaerben. Im Nur-Symbole-Modus wird der Starter einer laufenden
++                // Anwendung ausgeblendet und durch ihr Fenster ersetzt, deshalb
++                // trennt IsLauncher hier genau "angeheftet" von "geoeffnet".
++                tintColor: task.model.IsLauncher
++                    ? Plasmoid.configuration.tintColor
++                    : Plasmoid.configuration.tintColorOpen
++                tintStrength: task.model.IsLauncher
++                    ? Plasmoid.configuration.tintStrength
++                    : Plasmoid.configuration.tintStrengthOpen
 +            }
 +
 +            HoverSpin {
