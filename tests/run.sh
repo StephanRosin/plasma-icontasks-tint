@@ -62,12 +62,14 @@ qml_test() {
 }
 
 test_hoverspin() { qml_test 'HoverSpin' "$ROOT/tests/qml/tst_hoverspin.qml"; }
+test_iconeffect() { qml_test 'IconEffect' "$ROOT/tests/qml/tst_iconeffect.qml"; }
 
 case "${1:-all}" in
-    extract)   test_extract ;;
-    hoverspin) test_hoverspin ;;
-    all)       test_extract; test_hoverspin ;;
-    *)         printf 'unbekannter Test: %s\n' "$1"; exit 2 ;;
+    extract)    test_extract ;;
+    hoverspin)  test_hoverspin ;;
+    iconeffect) test_iconeffect ;;
+    all)        test_extract; test_hoverspin; test_iconeffect ;;
+    *)          printf 'unbekannter Test: %s\n' "$1"; exit 2 ;;
 esac
 
 [[ "$FAILED" -eq 0 ]] && printf '\nalle Tests bestanden\n' || printf '\nes gab Fehler\n'
