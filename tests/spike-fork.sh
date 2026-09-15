@@ -41,8 +41,9 @@ mv "$DEST/contents/ui/config.qml" "$DEST/contents/config/config.qml"
 
 # Lokalen Namensraum anlegen: qmldir, Backend-Ersatz und die beiden JS-Bibliotheken
 mkdir -p "$DEST/contents/ui/tmlocal"
-cp "$ROOT/skel/tmlocal-qmldir"   "$DEST/contents/ui/tmlocal/qmldir"
-cp "$ROOT/patch/Backend.qml"     "$DEST/contents/ui/tmlocal/"
+cp "$ROOT/skel/tmlocal-qmldir"          "$DEST/contents/ui/tmlocal/qmldir"
+cp "$ROOT/patch/Backend.qml"            "$DEST/contents/ui/tmlocal/"
+cp "$ROOT/patch/SmartLauncherItem.qml"  "$DEST/contents/ui/tmlocal/"
 cp "$DEST/contents/ui/LayoutMetrics.js" "$DEST/contents/ui/TaskTools.js" \
    "$DEST/contents/ui/tmlocal/"
 
@@ -67,7 +68,7 @@ printf '\n--- Ausgabe (stdout/stderr + Journal) ---\n'
 cat "$LOG"
 printf '\n--- Bewertung ---\n'
 
-if grep -qiE 'is not a type|module .* is not installed|Cannot assign|ReferenceError|error when loading applet|Backend\.qml|tmlocal' "$LOG"; then
+if grep -qiE 'is not a type|module .* is not installed|Cannot assign|ReferenceError|error when loading applet|Backend\.qml|tmlocal|TypeError|SmartLauncherItem' "$LOG"; then
     printf 'FEHLGESCHLAGEN: QML-Fehler, siehe oben.\n'
     exit 1
 fi
