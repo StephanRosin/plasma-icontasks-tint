@@ -1,2 +1,0 @@
-module plasma.applet.org.kde.plasma.taskmanager
-plugin org.kde.plasma.taskmanager /usr/lib/qt6/plugins/plasma/applets
