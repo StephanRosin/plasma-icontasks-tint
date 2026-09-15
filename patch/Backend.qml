@@ -1,4 +1,10 @@
 /*
+    SPDX-FileCopyrightText: 2026 Stephan <StephanRosin@users.noreply.github.com>
+
+    SPDX-License-Identifier: GPL-2.0-or-later
+*/
+
+/*
     Ersatz fuer den C++-Typ Backend aus dem mitgelieferten Task-Manager.
 
     Der echte Backend steckt in der Applet-Bibliothek und laesst sich aus einem

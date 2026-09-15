@@ -1,4 +1,10 @@
 /*
+    SPDX-FileCopyrightText: 2026 Stephan <StephanRosin@users.noreply.github.com>
+
+    SPDX-License-Identifier: GPL-2.0-or-later
+*/
+
+/*
     Dreht `target`, solange `hovered` gilt, und verkleinert es dabei.
 
     Das Verkleinern ist keine Zier: Das Symbol fuellt die Panelhoehe fast aus, und ein um

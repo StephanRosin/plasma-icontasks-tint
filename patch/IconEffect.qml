@@ -1,4 +1,10 @@
 /*
+    SPDX-FileCopyrightText: 2026 Stephan <StephanRosin@users.noreply.github.com>
+
+    SPDX-License-Identifier: GPL-2.0-or-later
+*/
+
+/*
     Faerbt ein Symbol ein: im Ruhezustand entsaettigt und Richtung Akzentblau getoent,
     unter dem Mauszeiger wieder in seinen echten Farben.
 
