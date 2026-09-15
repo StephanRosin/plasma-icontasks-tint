@@ -56,8 +56,8 @@ Item {
                 const e = root.effektHolen();
                 root.check(e !== null, "Effekt ist eingehaengt");
                 root.check(Math.abs(e.saturation + 1.0) < 0.01, "Ruhe: voll entsaettigt");
-                root.check(Math.abs(e.colorization - 0.55) < 0.01, "Ruhe: getoent mit 0.55");
-                root.check(e.colorizationColor.toString() === "#3daee9", "Ruhe: Toenung ist das Akzentblau");
+                root.check(Math.abs(e.colorization - 0.85) < 0.01, "Ruhe: getoent mit 0.85");
+                root.check(e.colorizationColor.toString() === "#9b6dff", "Ruhe: Toenung ist das Violett");
                 root.gehovert = true;
             }
         }
@@ -65,7 +65,7 @@ Item {
         ScriptAction {
             script: {
                 const e = root.effektHolen();
-                root.check(e.colorization > 0.01 && e.colorization < 0.54,
+                root.check(e.colorization > 0.01 && e.colorization < 0.84,
                            "blendet ueber statt zu springen");
             }
         }

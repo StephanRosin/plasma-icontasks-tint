@@ -16,8 +16,8 @@ MultiEffect {
     property bool hovered: false
 
     // ---- Stellschrauben ----
-    property color tintColor: "#3daee9"
-    property real tintStrength: 0.55  // 0 = keine Toenung, 1 = volle Toenung
+    property color tintColor: "#9b6dff"
+    property real tintStrength: 0.85  // 0 = keine Toenung, 1 = volle Toenung
     property int fadeDuration: 150    // ms fuer den Farbwechsel
 
     saturation: hovered ? 0.0 : -1.0

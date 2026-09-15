@@ -120,6 +120,30 @@ else
     printf '  keine weitere Datei mehr umzustellen - Task.qml hat der Patch bereits erledigt.\n'
 fi
 
+# Der Code fragt an neun Stellen seine eigene Identitaet ab, um zu entscheiden,
+# ob er im Nur-Symbole-Modus laeuft - allen voran
+#   readonly property bool iconsOnly: Plasmoid.pluginName === "org.kde.plasma.icontasks"
+# in main.qml. Unter eigener ID trifft dieser Vergleich nicht mehr zu, und der Code
+# faellt in den breiten Task-Manager-Modus mit Beschriftungen zurueck. Angeheftete
+# Starter blieben dabei Symbole (model.IsLauncher greift separat), nur geoeffnete
+# Fenster wuerden breit - genau so ist es am 2026-09-15 aufgefallen.
+# Ein Ersetzen der Zeichenkette zieht alle neun Stellen auf einmal richtig, auch die
+# Vergleiche mit !==, die dadurch korrekt falsch werden.
+printf 'Stelle die Identitaetsabfragen um ...\n'
+mapfile -t identitaet < <(grep -rl '"org\.kde\.plasma\.icontasks"' "$BUILD/ui" --include='*.qml')
+if [[ "${#identitaet[@]}" -eq 0 ]]; then
+    printf 'Abbruch: keine Datei fragt mehr auf "org.kde.plasma.icontasks" ab.\n' >&2
+    printf 'Damit laesst sich der Nur-Symbole-Modus nicht mehr setzen - Aufbau neu pruefen.\n' >&2
+    exit 1
+fi
+sed -i 's|"org\.kde\.plasma\.icontasks"|"ch.sterostxc.icontasks-tint"|g' "${identitaet[@]}"
+printf '  %d Datei(en) umgestellt\n' "${#identitaet[@]}"
+
+if grep -rq '"org\.kde\.plasma\.icontasks"' "$BUILD/ui" --include='*.qml'; then
+    printf 'Abbruch: es steht noch eine Identitaetsabfrage auf die alte ID im Paket.\n' >&2
+    exit 1
+fi
+
 # Gegenprobe: danach darf keine Datei mehr auf das Bibliotheksmodul verweisen.
 # Faende sich noch eine, haette der sed-Ausdruck nicht gegriffen (z. B. weil
 # Plasma die Import-Zeile leicht anders schreibt) - dann lieber abbrechen als
