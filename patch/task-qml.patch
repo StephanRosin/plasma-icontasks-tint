@@ -1,5 +1,5 @@
---- a/Task.qml	2026-09-15 15:28:44.119835168 +0200
-+++ b/Task.qml	2026-09-15 15:28:44.141879027 +0200
+--- a/Task.qml	2026-09-15 16:27:11.936266817 +0200
++++ b/Task.qml	2026-09-15 16:27:17.291497505 +0200
 @@ -15,7 +15,7 @@
  import org.kde.plasma.extras as PlasmaExtras
  import org.kde.plasma.components as PlasmaComponents3
@@ -18,7 +18,7 @@
              const smartLauncher = component.createObject(task);
              component.destroy();
  
-@@ -571,6 +571,19 @@
+@@ -571,6 +571,21 @@
              enabled: true
  
              source: task.model.decoration
@@ -29,6 +29,8 @@
 +            layer.smooth: true
 +            layer.effect: IconEffect {
 +                hovered: task.highlighted
++                tintColor: Plasmoid.configuration.tintColor
++                tintStrength: Plasmoid.configuration.tintStrength
 +            }
 +
 +            HoverSpin {

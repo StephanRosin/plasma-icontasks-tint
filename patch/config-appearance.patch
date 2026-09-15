@@ -1,0 +1,91 @@
+--- a/main.xml	2026-09-15 16:27:11.936097571 +0200
++++ b/main.xml	2026-09-15 16:27:11.979982256 +0200
+@@ -154,6 +154,14 @@
+       <label> Spacing between icons in task manager. Margin is multiplied by this value.</label>
+       <default>1</default>
+     </entry>
++    <entry name="tintColor" type="String">
++      <label>Farbton, in den die Symbole eingefaerbt werden.</label>
++      <default>#387a94</default>
++    </entry>
++    <entry name="tintStrength" type="Double">
++      <label>Wie stark die Symbole eingefaerbt werden. 0 laesst sie unveraendert, 1 faerbt sie vollstaendig ein.</label>
++      <default>1.0</default>
++    </entry>
+   </group>
+ 
+ </kcfg>
+--- a/ConfigAppearance.qml	2026-09-15 16:27:11.935857527 +0200
++++ b/ConfigAppearance.qml	2026-09-15 16:27:11.980235764 +0200
+@@ -6,8 +6,10 @@
+ 
+ import QtQuick
+ import QtQuick.Controls as QQC2
++import QtQuick.Layouts
+ 
+ import org.kde.kcmutils as KCMUtils
++import org.kde.kquickcontrols as KQuickControls
+ import org.kde.kirigami as Kirigami
+ import org.kde.plasma.core as PlasmaCore
+ import org.kde.plasma.plasmoid
+@@ -29,6 +31,8 @@
+     property alias cfg_forceStripes: forceStripes.checked
+     property alias cfg_taskMaxWidth: taskMaxWidth.currentIndex
+     property int cfg_iconSpacing: 0
++    property string cfg_tintColor: "#387a94"
++    property real cfg_tintStrength: 1.0
+ 
+     Component.onCompleted: {
+         /* Don't rely on bindings for checking the radiobuttons
+@@ -184,5 +188,51 @@
+                 root.cfg_iconSpacing = model[currentIndex]["spacing"];
+             }
+         }
++
++        Item {
++            Kirigami.FormData.isSection: true
++        }
++
++        // Einfaerbung der Symbole. Siehe plasma-icontasks-tint.
++        KQuickControls.ColorButton {
++            id: tintColorButton
++
++            Kirigami.FormData.label: i18nc("@label:chooser", "Farbton der Symbole:")
++
++            showAlphaChannel: false
++            dialogTitle: i18nc("@title:window", "Farbton der Symbole")
++
++            // Einmalig setzen statt zu binden: der Farbdialog schreibt dieselbe
++            // Eigenschaft, eine Bindung wuerde mit ihm um den Wert streiten.
++            Component.onCompleted: color = root.cfg_tintColor
++            onAccepted: root.cfg_tintColor = color.toString()
++        }
++
++        RowLayout {
++            Kirigami.FormData.label: i18nc("@label:slider", "Staerke der Einfaerbung:")
++
++            QQC2.Slider {
++                id: tintStrengthSlider
++
++                Layout.fillWidth: true
++                from: 0.0
++                to: 1.0
++                stepSize: 0.05
++                value: root.cfg_tintStrength
++                onMoved: root.cfg_tintStrength = value
++            }
++
++            QQC2.Label {
++                Layout.minimumWidth: tintStrengthMetrics.width
++                horizontalAlignment: Text.AlignRight
++                text: Math.round(root.cfg_tintStrength * 100) + " %"
++
++                TextMetrics {
++                    id: tintStrengthMetrics
++                    font: parent.font
++                    text: "100 %"
++                }
++            }
++        }
+     }
+ }

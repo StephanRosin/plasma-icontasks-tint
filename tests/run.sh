@@ -91,6 +91,22 @@ test_patch() {
         && ok "das Icon-Element ist unveraendert geblieben" \
         || fail "das Icon-Element wurde doppelt oder gar nicht angefasst"
 
+    patch -s -p1 -d "$out" < "$ROOT/patch/config-appearance.patch" \
+        && ok "Einstellungs-Patch ist anwendbar" \
+        || fail "Einstellungs-Patch passt nicht mehr auf main.xml/ConfigAppearance.qml"
+
+    grep -q '<entry name="tintColor"' "$out/main.xml" \
+        && ok "tintColor ist als Einstellung angelegt" || fail "tintColor fehlt in main.xml"
+    grep -q '<entry name="tintStrength"' "$out/main.xml" \
+        && ok "tintStrength ist als Einstellung angelegt" || fail "tintStrength fehlt in main.xml"
+    grep -q 'cfg_tintColor' "$out/ConfigAppearance.qml" \
+        && ok "Farbwaehler im Einstellungsdialog" || fail "Farbwaehler fehlt"
+    grep -q 'cfg_tintStrength' "$out/ConfigAppearance.qml" \
+        && ok "Staerkeregler im Einstellungsdialog" || fail "Staerkeregler fehlt"
+    grep -q 'tintColor: Plasmoid.configuration.tintColor' "$out/Task.qml" \
+        && ok "Task.qml reicht die Einstellung an IconEffect durch" \
+        || fail "Task.qml reicht die Einstellung nicht durch"
+
     grep -q 'Qt.createComponent("tmlocal/SmartLauncherItem.qml")' "$out/Task.qml" \
         && ok "SmartLauncherItem wird lokal aufgeloest" \
         || fail "die Erzeugungsstelle von SmartLauncherItem zeigt noch auf das Bibliotheksmodul"

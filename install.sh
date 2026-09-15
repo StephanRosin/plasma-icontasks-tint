@@ -54,6 +54,15 @@ if ! patch --dry-run -s -p1 -d "$BUILD/ui" < "$ROOT/patch/task-qml.patch"; then
 fi
 patch -s -p1 -d "$BUILD/ui" < "$ROOT/patch/task-qml.patch"
 
+# Zweiter Patch: die Einfaerbung als Widget-Einstellung im Reiter "Erscheinungsbild".
+# Muss vor dem Verschieben von main.xml nach contents/config/ laufen.
+if ! patch --dry-run -s -p1 -d "$BUILD/ui" < "$ROOT/patch/config-appearance.patch"; then
+    printf 'Abbruch: Der Patch fuer die Einstellungen passt nicht mehr.\n' >&2
+    printf 'Plasma hat main.xml oder ConfigAppearance.qml geaendert. Patch neu erzeugen.\n' >&2
+    exit 1
+fi
+patch -s -p1 -d "$BUILD/ui" < "$ROOT/patch/config-appearance.patch"
+
 cp "$ROOT/patch/IconEffect.qml" "$ROOT/patch/HoverSpin.qml" "$BUILD/ui/"
 
 # Die mitgelieferte qmldir stammt aus dem kompilierten Modul und enthaelt eine
