@@ -32,10 +32,29 @@ test_extract() {
         || fail "Icon-Quelle hat sich geaendert"
 }
 
+# Laesst eine QML-Testdatei laufen, zeigt ihre Zusicherungen und wertet den Rueckgabewert aus.
+# Die Testdatei beendet sich mit Qt.exit(<Anzahl Fehler>), 0 heisst bestanden.
+qml_test() {
+    local name="$1" datei="$2" ausgabe
+    printf '%s\n' "$name"
+    ausgabe="$(qml -platform offscreen "$datei" 2>&1)"
+    local code=$?
+    printf '%s\n' "$ausgabe" | grep -E '^[[:space:]]+(ok|FAIL)' || true
+    if [[ "$code" -eq 0 ]]; then
+        ok "alle Zusicherungen erfuellt"
+    else
+        fail "$code Zusicherung(en) verletzt oder QML-Fehler"
+        printf '%s\n' "$ausgabe" | tail -5
+    fi
+}
+
+test_hoverspin() { qml_test 'HoverSpin' "$ROOT/tests/qml/tst_hoverspin.qml"; }
+
 case "${1:-all}" in
-    extract) test_extract ;;
-    all)     test_extract ;;
-    *)       printf 'unbekannter Test: %s\n' "$1"; exit 2 ;;
+    extract)   test_extract ;;
+    hoverspin) test_hoverspin ;;
+    all)       test_extract; test_hoverspin ;;
+    *)         printf 'unbekannter Test: %s\n' "$1"; exit 2 ;;
 esac
 
 [[ "$FAILED" -eq 0 ]] && printf '\nalle Tests bestanden\n' || printf '\nes gab Fehler\n'
