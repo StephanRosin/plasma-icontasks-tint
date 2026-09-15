@@ -7,7 +7,23 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEST="$HOME/.local/share/plasma/plasmoids/ch.sterostxc.icontasks-tint"
 BUILD="$(mktemp -d)"
-trap 'rm -rf "$BUILD"' EXIT
+# STAGE (fertiges Paket, wartet auf den atomaren Platzwechsel) und ALT
+# (beiseite geschobene alte Installation) entstehen erst weiter unten -
+# hier schon leer deklariert, damit "set -u" beim Aufraeumen nicht stoert,
+# falls das Skript vorher abbricht.
+STAGE=""
+ALT=""
+aufraeumen() {
+    # Den Exit-Code des eigentlichen Skripts sichern, bevor hier irgendein
+    # Test (z. B. "-e $ALT" nach erfolgreichem Aufraeumen) mit falsch
+    # zurueckkommt und sonst faelschlich zu einem Exit-Code 1 fuehren wuerde.
+    local status=$?
+    rm -rf "$BUILD"
+    [[ -n "$STAGE" && -e "$STAGE" ]] && rm -rf "$STAGE"
+    [[ -n "$ALT" && -e "$ALT" ]] && rm -rf "$ALT"
+    exit "$status"
+}
+trap aufraeumen EXIT
 
 # Vorpruefung: alle Bausteine, die dieses Skript spaeter kopiert, muessen jetzt
 # schon da sein. Lieber hier klar abbrechen als mitten im Bau mit "cp: nicht
@@ -76,14 +92,33 @@ printf 'Biege den Namensraum um ...\n'
 # generisch umgestellt.
 mapfile -t betroffen < <(grep -rl 'plasma\.applet\.org\.kde\.plasma\.taskmanager' \
                          "$BUILD/ui" --include='*.qml')
-if [[ "${#betroffen[@]}" -eq 0 ]]; then
-    printf 'Abbruch: keine Datei importiert das Bibliotheksmodul mehr.\n' >&2
+
+# Ein leeres $betroffen hat zwei ganz verschiedene Ursachen, die sich nicht
+# verwechseln duerfen: entweder war Task.qml zufaellig die letzte Datei mit
+# diesem Import, und der Patch hat sie schon erledigt (voellig in Ordnung -
+# dann bleibt fuer den sed-Schritt hier nichts mehr zu tun), oder das
+# Bibliotheksmodul wird nirgends mehr importiert, auch nicht in der vom
+# Patch erzeugten Form (dann greift der ganze Ansatz nicht mehr). Nur der
+# zweite Fall ist ein echter Abbruchgrund.
+task_qml_vom_patch_umgestellt=false
+if [[ -f "$BUILD/ui/Task.qml" ]] \
+    && grep -q 'import "tmlocal" as TaskManagerApplet' "$BUILD/ui/Task.qml"; then
+    task_qml_vom_patch_umgestellt=true
+fi
+
+if [[ "${#betroffen[@]}" -eq 0 && "$task_qml_vom_patch_umgestellt" == false ]]; then
+    printf 'Abbruch: keine Datei importiert das Bibliotheksmodul mehr - auch Task.qml nicht, weder im Original- noch im vom Patch umgestellten Import.\n' >&2
     printf 'Plasma hat den Aufbau geaendert, der Ansatz ist neu zu pruefen.\n' >&2
     exit 1
 fi
-sed -i 's|import plasma\.applet\.org\.kde\.plasma\.taskmanager as TaskManagerApplet|import "tmlocal" as TaskManagerApplet|' \
-    "${betroffen[@]}"
-printf '  %d Datei(en) umgestellt\n' "${#betroffen[@]}"
+
+if [[ "${#betroffen[@]}" -gt 0 ]]; then
+    sed -i 's|import plasma\.applet\.org\.kde\.plasma\.taskmanager as TaskManagerApplet|import "tmlocal" as TaskManagerApplet|' \
+        "${betroffen[@]}"
+    printf '  %d Datei(en) umgestellt\n' "${#betroffen[@]}"
+else
+    printf '  keine weitere Datei mehr umzustellen - Task.qml hat der Patch bereits erledigt.\n'
+fi
 
 # Gegenprobe: danach darf keine Datei mehr auf das Bibliotheksmodul verweisen.
 # Faende sich noch eine, haette der sed-Ausdruck nicht gegriffen (z. B. weil
@@ -96,11 +131,41 @@ if grep -rlq 'plasma\.applet\.org\.kde\.plasma\.taskmanager' "$BUILD/ui" --inclu
 fi
 
 printf 'Installiere nach %s ...\n' "$DEST"
-rm -rf "$DEST"
-mkdir -p "$DEST/contents"
-cp "$ROOT/skel/metadata.json" "$DEST/metadata.json"
-cp -r "$BUILD/ui" "$DEST/contents/ui"
-cp -r "$BUILD/config" "$DEST/contents/config"
+DEST_PARENT="$(dirname "$DEST")"
+mkdir -p "$DEST_PARENT"
+
+# Das fertige Paket vollstaendig in einem Geschwisterverzeichnis von $DEST
+# zusammenbauen - selbes Elternverzeichnis, also selbes Dateisystem, das ist
+# die Voraussetzung dafuer, dass der Platzwechsel weiter unten ein einzelnes,
+# atomares mv (Rename) sein kann statt eines Kopiervorgangs. Bricht dieser
+# Aufbau hier ab (volle Platte, abgebrochener Lauf), ist $DEST noch gar
+# nicht angefasst - die alte Installation bleibt unversehrt.
+STAGE="$(mktemp -d "$DEST_PARENT/.icontasks-tint-build.XXXXXX")"
+mkdir -p "$STAGE/contents"
+cp "$ROOT/skel/metadata.json" "$STAGE/metadata.json"
+cp -r "$BUILD/ui" "$STAGE/contents/ui"
+cp -r "$BUILD/config" "$STAGE/contents/config"
+
+# Platzwechsel: zwei einzelne mv (Rename), jedes fuer sich atomar - nie ein
+# halb kopiertes $DEST. Eine bestehende Installation wird erst beiseite
+# geschoben (ALT), dann das fertige Paket an ihre Stelle bewegt. Schlaegt der
+# zweite mv wider Erwarten fehl, wird die alte Installation aus ALT sofort
+# zurueckgeholt, statt den Benutzer ganz ohne Widget dastehen zu lassen.
+ALT="$DEST_PARENT/.icontasks-tint-alt.$$"
+if [[ -e "$DEST" ]] && ! mv "$DEST" "$ALT"; then
+    printf 'Abbruch: die bestehende Installation unter %s liess sich nicht beiseite schieben.\n' "$DEST" >&2
+    printf 'Sie ist unveraendert - nichts wurde installiert.\n' >&2
+    exit 1
+fi
+if ! mv "$STAGE" "$DEST"; then
+    printf 'Abbruch: Platzwechsel nach %s fehlgeschlagen.\n' "$DEST" >&2
+    if [[ -e "$ALT" ]]; then
+        printf 'Stelle die vorherige Installation wieder her ...\n' >&2
+        mv "$ALT" "$DEST"
+    fi
+    exit 1
+fi
+rm -rf "$ALT" 2>/dev/null || true
 
 printf 'Starte die Plasma-Shell neu ...\n'
 systemctl --user restart plasma-plasmashell
