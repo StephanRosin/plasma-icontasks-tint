@@ -1,0 +1,40 @@
+--- a/Task.qml	2026-09-15 15:28:44.119835168 +0200
++++ b/Task.qml	2026-09-15 15:28:44.141879027 +0200
+@@ -15,7 +15,7 @@
+ import org.kde.plasma.extras as PlasmaExtras
+ import org.kde.plasma.components as PlasmaComponents3
+ import org.kde.kirigami as Kirigami
+-import plasma.applet.org.kde.plasma.taskmanager as TaskManagerApplet
++import "tmlocal" as TaskManagerApplet
+ import org.kde.plasma.plasmoid
+ 
+ import org.kde.taskmanager as TaskManager
+@@ -237,7 +237,7 @@
+ 
+     onSmartLauncherEnabledChanged: {
+         if (smartLauncherEnabled && !smartLauncherItem) {
+-            const component = Qt.createComponent("plasma.applet.org.kde.plasma.taskmanager", "SmartLauncherItem");
++            const component = Qt.createComponent("tmlocal/SmartLauncherItem.qml");
+             const smartLauncher = component.createObject(task);
+             component.destroy();
+ 
+@@ -571,6 +571,19 @@
+             enabled: true
+ 
+             source: task.model.decoration
++
++            // Einfaerbung und Hover-Drehung, siehe plasma-icontasks-tint
++            transformOrigin: Item.Center
++            layer.enabled: true
++            layer.smooth: true
++            layer.effect: IconEffect {
++                hovered: task.highlighted
++            }
++
++            HoverSpin {
++                target: icon
++                hovered: task.highlighted
++            }
+         }
+ 
+         states: [

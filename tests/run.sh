@@ -64,11 +64,48 @@ qml_test() {
 test_hoverspin() { qml_test 'HoverSpin' "$ROOT/tests/qml/tst_hoverspin.qml"; }
 test_iconeffect() { qml_test 'IconEffect' "$ROOT/tests/qml/tst_iconeffect.qml"; }
 
+test_patch() {
+    printf 'task-qml.patch\n'
+    local out; out="$(mktemp -d)"
+    trap 'rm -rf "$out"' RETURN
+
+    python3 "$ROOT/extract.py" "$out" >/dev/null 2>&1 || { fail "Extraktion"; return; }
+
+    if patch --dry-run -s -p1 -d "$out" < "$ROOT/patch/task-qml.patch"; then
+        ok "Patch ist anwendbar"
+    else
+        fail "Patch passt nicht mehr auf Task.qml - Upstream hat sich geaendert"
+        return
+    fi
+
+    patch -s -p1 -d "$out" < "$ROOT/patch/task-qml.patch"
+
+    grep -q 'layer.effect: IconEffect' "$out/Task.qml" \
+        && ok "IconEffect eingehaengt" || fail "IconEffect fehlt"
+    grep -q 'HoverSpin' "$out/Task.qml" \
+        && ok "HoverSpin eingehaengt" || fail "HoverSpin fehlt"
+    # Zeilenanker: 'id: icon' ohne $ traefe auch 'id: iconBox' (den Loader
+    # weiter oben in derselben Datei) und waere nie bei genau 1 - unabhaengig
+    # vom Patch. Das ist eine Praezisierung des Musters, keine Lockerung.
+    grep -c 'id: icon$' "$out/Task.qml" | grep -q '^1$' \
+        && ok "das Icon-Element ist unveraendert geblieben" \
+        || fail "das Icon-Element wurde doppelt oder gar nicht angefasst"
+
+    grep -q 'Qt.createComponent("tmlocal/SmartLauncherItem.qml")' "$out/Task.qml" \
+        && ok "SmartLauncherItem wird lokal aufgeloest" \
+        || fail "die Erzeugungsstelle von SmartLauncherItem zeigt noch auf das Bibliotheksmodul"
+
+    grep -q 'plasma.applet.org.kde.plasma.taskmanager' "$out/Task.qml" \
+        && fail "Task.qml verweist noch auf das Bibliotheksmodul" \
+        || ok "kein Verweis auf das Bibliotheksmodul mehr in Task.qml"
+}
+
 case "${1:-all}" in
     extract)    test_extract ;;
     hoverspin)  test_hoverspin ;;
     iconeffect) test_iconeffect ;;
-    all)        test_extract; test_hoverspin; test_iconeffect ;;
+    patch)      test_patch ;;
+    all)        test_extract; test_hoverspin; test_iconeffect; test_patch ;;
     *)          printf 'unbekannter Test: %s\n' "$1"; exit 2 ;;
 esac
 
