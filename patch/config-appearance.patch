@@ -5,19 +5,19 @@
        <default>1</default>
      </entry>
 +    <entry name="tintColor" type="String">
-+      <label>Farbton fuer angeheftete Starter.</label>
++      <label>Farbton für angeheftete Starter.</label>
 +      <default>#387a94</default>
 +    </entry>
 +    <entry name="tintStrength" type="Double">
-+      <label>Staerke der Einfaerbung angehefteter Starter. 0 laesst sie unveraendert, 1 faerbt sie vollstaendig ein.</label>
++      <label>Stärke der Einfärbung angehefteter Starter. 0 lässt sie unverändert, 1 färbt sie vollständig ein.</label>
 +      <default>1.0</default>
 +    </entry>
 +    <entry name="tintColorOpen" type="String">
-+      <label>Farbton fuer geoeffnete Fenster.</label>
++      <label>Farbton für geöffnete Fenster.</label>
 +      <default>#387a94</default>
 +    </entry>
 +    <entry name="tintStrengthOpen" type="Double">
-+      <label>Staerke der Einfaerbung geoeffneter Fenster.</label>
++      <label>Stärke der Einfärbung geöffneter Fenster.</label>
 +      <default>1.0</default>
 +    </entry>
    </group>
@@ -54,7 +54,7 @@
 +
 +        Item {
 +            Kirigami.FormData.isSection: true
-+            Kirigami.FormData.label: i18nc("@title:group", "Einfaerbung der Symbole")
++            Kirigami.FormData.label: i18nc("@title:group", "Einfärbung der Symbole")
 +        }
 +
 +        // Einfaerbung der Symbole. Siehe plasma-icontasks-tint.
@@ -74,7 +74,7 @@
 +        }
 +
 +        RowLayout {
-+            Kirigami.FormData.label: i18nc("@label:slider", "Staerke:")
++            Kirigami.FormData.label: i18nc("@label:slider", "Stärke:")
 +
 +            QQC2.Slider {
 +                id: tintStrengthSlider
@@ -103,17 +103,17 @@
 +        KQuickControls.ColorButton {
 +            id: tintColorOpenButton
 +
-+            Kirigami.FormData.label: i18nc("@label:chooser", "Geoeffnete Fenster:")
++            Kirigami.FormData.label: i18nc("@label:chooser", "Geöffnete Fenster:")
 +
 +            showAlphaChannel: false
-+            dialogTitle: i18nc("@title:window", "Farbton geoeffneter Fenster")
++            dialogTitle: i18nc("@title:window", "Farbton geöffneter Fenster")
 +
 +            Component.onCompleted: color = root.cfg_tintColorOpen
 +            onAccepted: root.cfg_tintColorOpen = color.toString()
 +        }
 +
 +        RowLayout {
-+            Kirigami.FormData.label: i18nc("@label:slider", "Staerke:")
++            Kirigami.FormData.label: i18nc("@label:slider", "Stärke:")
 +
 +            QQC2.Slider {
 +                id: tintStrengthOpenSlider
@@ -144,7 +144,7 @@
 +            Layout.maximumWidth: Kirigami.Units.gridUnit * 18
 +            wrapMode: Text.WordWrap
 +            font: Kirigami.Theme.smallFont
-+            text: i18nc("@info", "Bei Staerke 0 bleiben die Symbole unveraendert. Unter dem Mauszeiger zeigt ein Symbol immer seine echten Farben.")
++            text: i18nc("@info", "Bei Stärke 0 bleiben die Symbole unverändert. Unter dem Mauszeiger zeigt ein Symbol immer seine echten Farben.")
 +        }
      }
  }
