@@ -130,7 +130,10 @@ fi
 # Ein Ersetzen der Zeichenkette zieht alle neun Stellen auf einmal richtig, auch die
 # Vergleiche mit !==, die dadurch korrekt falsch werden.
 printf 'Stelle die Identitaetsabfragen um ...\n'
-mapfile -t identitaet < <(grep -rl '"org\.kde\.plasma\.icontasks"' "$BUILD/ui" --include='*.qml')
+# Auch .js-Dateien: LayoutMetrics.js entscheidet daran, ob iconSpacing ueberhaupt
+# beachtet wird. Nur *.qml zu erfassen hat am 2026-09-15 den eingestellten
+# Symbolabstand stillschweigend auf 1 zurueckgesetzt.
+mapfile -t identitaet < <(grep -rl '"org\.kde\.plasma\.icontasks"' "$BUILD/ui")
 if [[ "${#identitaet[@]}" -eq 0 ]]; then
     printf 'Abbruch: keine Datei fragt mehr auf "org.kde.plasma.icontasks" ab.\n' >&2
     printf 'Damit laesst sich der Nur-Symbole-Modus nicht mehr setzen - Aufbau neu pruefen.\n' >&2
@@ -139,7 +142,7 @@ fi
 sed -i 's|"org\.kde\.plasma\.icontasks"|"ch.sterostxc.icontasks-tint"|g' "${identitaet[@]}"
 printf '  %d Datei(en) umgestellt\n' "${#identitaet[@]}"
 
-if grep -rq '"org\.kde\.plasma\.icontasks"' "$BUILD/ui" --include='*.qml'; then
+if grep -rq '"org\.kde\.plasma\.icontasks"' "$BUILD/ui"; then
     printf 'Abbruch: es steht noch eine Identitaetsabfrage auf die alte ID im Paket.\n' >&2
     exit 1
 fi

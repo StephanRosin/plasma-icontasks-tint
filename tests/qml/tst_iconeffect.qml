@@ -55,8 +55,8 @@ Item {
             script: {
                 const e = root.effektHolen();
                 root.check(e !== null, "Effekt ist eingehaengt");
-                root.check(Math.abs(e.saturation + 1.0) < 0.01, "Ruhe: voll entsaettigt");
-                root.check(Math.abs(e.colorization - 0.85) < 0.01, "Ruhe: getoent mit 0.85");
+                root.check(Math.abs(e.saturation) < 0.01, "Ruhe: Saettigung neutral (Toenung darf nicht zerstoert werden)");
+                root.check(Math.abs(e.colorization - 1.0) < 0.01, "Ruhe: voll getoent");
                 root.check(e.colorizationColor.toString() === "#9b6dff", "Ruhe: Toenung ist das Violett");
                 root.gehovert = true;
             }
@@ -65,7 +65,7 @@ Item {
         ScriptAction {
             script: {
                 const e = root.effektHolen();
-                root.check(e.colorization > 0.01 && e.colorization < 0.84,
+                root.check(e.colorization > 0.01 && e.colorization < 0.99,
                            "blendet ueber statt zu springen");
             }
         }
@@ -73,7 +73,7 @@ Item {
         ScriptAction {
             script: {
                 const e = root.effektHolen();
-                root.check(Math.abs(e.saturation) < 0.01, "Hover: volle Saettigung");
+                root.check(Math.abs(e.saturation) < 0.01, "Hover: Saettigung neutral");
                 root.check(Math.abs(e.colorization) < 0.01, "Hover: keine Toenung mehr");
                 Qt.exit(root.failures);
             }

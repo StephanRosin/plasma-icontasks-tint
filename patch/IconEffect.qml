@@ -17,10 +17,14 @@ MultiEffect {
 
     // ---- Stellschrauben ----
     property color tintColor: "#9b6dff"
-    property real tintStrength: 0.85  // 0 = keine Toenung, 1 = volle Toenung
+    property real tintStrength: 1.0   // 0 = keine Toenung, 1 = volle Toenung
     property int fadeDuration: 150    // ms fuer den Farbwechsel
 
-    saturation: hovered ? 0.0 : -1.0
+    // KEINE Entsaettigung hier: Qt wendet saturation nach der Einfaerbung an und
+    // wuerde die Toenung wieder wegfressen - uebrig bliebe Grau. Die Toenung allein
+    // erzwingt bereits einen einheitlichen Farbton, weil sie jeden Bildpunkt auf
+    // tintColor mal Helligkeit abbildet.
+    saturation: 0.0
     colorization: hovered ? 0.0 : root.tintStrength
     colorizationColor: root.tintColor
 
