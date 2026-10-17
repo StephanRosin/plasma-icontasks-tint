@@ -41,6 +41,19 @@ QtObject {
     // es muss aber existieren, sonst bricht die Verbindung mit einem Laufzeitfehler.
     signal showAllPlaces()
 
+    // Seit Plasma 6.8 setzt main.qml diese Eigenschaften und verbindet sich auf die
+    // Signale darunter. Der echte Backend loest sie ueber globale Kurzbefehle aus
+    // (Meta+1..9, Wechsel/Verschieben des aktiven Tasks); hier bleiben sie ohne Sender,
+    // diese Kurzbefehle wirken in diesem Widget also nicht.
+    property int screen: -1
+    property bool hasActiveTask: false
+    property bool showsOnlyCurrentScreen: false
+    signal activateTaskAtIndexRequested(int index)
+    signal activatePreviousTaskRequested()
+    signal activateNextTaskRequested()
+    signal moveActiveTaskBackwardRequested()
+    signal moveActiveTaskForwardRequested()
+
     // --- Kontextmenue-Extras: bewusst leer ---
     function recentDocumentActions(launcherUrl, parentMenu) { return []; }
     function placesActions(launcherUrl, showAllPlaces, parentMenu) { return []; }
