@@ -1,0 +1,21 @@
+--- a/TaskBadgeOverlay.qml	2026-10-24 19:03:28.442381066 +0200
++++ b/TaskBadgeOverlay.qml	2026-10-24 19:03:28.464784277 +0200
+@@ -57,7 +57,9 @@
+     ShaderEffectSource {
+         id: iconShaderSource
+         sourceItem: icon
+-        hideSource: GraphicsInfo.api !== GraphicsInfo.Software
++        // plasma-icontasks-tint: das echte Symbol bleibt sichtbar, sonst fehlt der Plakette die
++        // Hover-Drehung (die Kopie hier dreht nicht mit). Dafuer entfaellt der Ausschnitt um die Plakette.
++        hideSource: false
+     }
+ 
+     ShaderEffectSource {
+@@ -69,6 +71,7 @@
+ 
+     KGraphicalEffects.BadgeEffect {
+         id: shader
++        visible: false
+ 
+         anchors.fill: parent
+         source: iconShaderSource

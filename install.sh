@@ -30,6 +30,7 @@ trap aufraeumen EXIT
 # gefunden" und einem halb kopierten Zielverzeichnis.
 for datei in \
     "$ROOT/patch/task-qml.patch" \
+    "$ROOT/patch/badge-overlay.patch" \
     "$ROOT/patch/IconEffect.qml" \
     "$ROOT/patch/HoverSpin.qml" \
     "$ROOT/patch/Backend.qml" \
@@ -62,6 +63,14 @@ if ! patch --dry-run -s -p1 -d "$BUILD/ui" < "$ROOT/patch/config-appearance.patc
     exit 1
 fi
 patch -s -p1 -d "$BUILD/ui" < "$ROOT/patch/config-appearance.patch"
+
+# Dritter Patch: die Ungelesen-Plakette ueber das echte Symbol legen, damit es sich weiter dreht.
+if ! patch --dry-run -s -p1 -d "$BUILD/ui" < "$ROOT/patch/badge-overlay.patch"; then
+    printf 'Abbruch: Der Patch fuer die Plakette passt nicht mehr auf TaskBadgeOverlay.qml.\n' >&2
+    printf 'Plasma hat die Datei geaendert. Patch neu erzeugen.\n' >&2
+    exit 1
+fi
+patch -s -p1 -d "$BUILD/ui" < "$ROOT/patch/badge-overlay.patch"
 
 cp "$ROOT/patch/IconEffect.qml" "$ROOT/patch/HoverSpin.qml" "$BUILD/ui/"
 
