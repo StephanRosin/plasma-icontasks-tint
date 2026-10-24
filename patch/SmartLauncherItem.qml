@@ -16,7 +16,7 @@
     Bewusst hingenommen: Fortschrittsbalken und Unity-Zaehler entfallen. Einzige
     Ausnahme ist Thunderbird, das unter Linux ohnehin keinen Unity-Zaehler sendet:
     Sein Add-on tb-unread (Repo ~/thunderbird-unread) schreibt die Ungelesen-Zahl
-    des kombinierten Posteingangs nach ~/.cache/thunderbird-unread, und dieser Typ
+    des kombinierten Posteingangs nach $XDG_RUNTIME_DIR/thunderbird-unread, und dieser Typ
     liest sie fuer TaskBadgeOverlay.qml. Die normale Aufmerksamkeitsanzeige ueber
     task.model.IsDemandingAttention bleibt unabhaengig davon erhalten - sie
     kommt direkt aus dem Fenstermanager, nicht von diesem Typ.
@@ -31,7 +31,7 @@ QtObject {
     property url launcherUrl
 
     readonly property string mailLauncher: "org.mozilla.Thunderbird.desktop"
-    readonly property string unreadCountCommand: "cat \"$HOME\"/.cache/thunderbird-unread 2>/dev/null"
+    readonly property string unreadCountCommand: "cat \"$XDG_RUNTIME_DIR\"/thunderbird-unread 2>/dev/null"
     // Das Add-on meldet Aenderungen sofort; die Taskleiste fragt die Datei so oft ab.
     readonly property int unreadPollMs: 3000
     readonly property bool isMailClient: String(launcherUrl).endsWith(mailLauncher)
