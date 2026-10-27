@@ -24,6 +24,9 @@ MultiEffect {
     // ---- Stellschrauben ----
     property color tintColor: "#387a94"
     property real tintStrength: 1.0   // 0 = keine Toenung, 1 = volle Toenung
+    // Aufhellung fuer Symbole, die von Haus aus dunkel sind (Obsidian, Steam): die Toenung
+    // bildet auf tintColor mal Helligkeit ab und kann nur zeigen, was an Helligkeit da ist.
+    property real lift: 0.0
     property int fadeDuration: 150    // ms fuer den Farbwechsel
 
     // KEINE Entsaettigung hier: Qt wendet saturation nach der Einfaerbung an und
@@ -33,6 +36,7 @@ MultiEffect {
     saturation: 0.0
     colorization: hovered ? 0.0 : root.tintStrength
     colorizationColor: root.tintColor
+    brightness: hovered ? 0.0 : root.lift
 
     Behavior on saturation {
         NumberAnimation {
@@ -41,6 +45,12 @@ MultiEffect {
         }
     }
 
+    Behavior on brightness {
+        NumberAnimation {
+            duration: root.fadeDuration
+            easing.type: Easing.OutQuad
+        }
+    }
     Behavior on colorization {
         NumberAnimation {
             duration: root.fadeDuration

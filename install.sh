@@ -33,6 +33,7 @@ for datei in \
     "$ROOT/patch/badge-overlay.patch" \
     "$ROOT/patch/IconEffect.qml" \
     "$ROOT/patch/HoverSpin.qml" \
+    "$ROOT/patch/TaskIndicator.qml" \
     "$ROOT/patch/Backend.qml" \
     "$ROOT/patch/SmartLauncherItem.qml" \
     "$ROOT/skel/metadata.json" \
@@ -72,7 +73,7 @@ if ! patch --dry-run -s -p1 -d "$BUILD/ui" < "$ROOT/patch/badge-overlay.patch"; 
 fi
 patch -s -p1 -d "$BUILD/ui" < "$ROOT/patch/badge-overlay.patch"
 
-cp "$ROOT/patch/IconEffect.qml" "$ROOT/patch/HoverSpin.qml" "$BUILD/ui/"
+cp "$ROOT/patch/IconEffect.qml" "$ROOT/patch/HoverSpin.qml" "$ROOT/patch/TaskIndicator.qml" "$BUILD/ui/"
 
 # Die mitgelieferte qmldir stammt aus dem kompilierten Modul und enthaelt eine
 # prefer-Zeile, die den lokalen Namensraum aushebelt. In Task 2 aufgefallen.

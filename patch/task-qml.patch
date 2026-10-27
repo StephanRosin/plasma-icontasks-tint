@@ -1,5 +1,5 @@
---- a/Task.qml	2026-10-27 11:33:28.687958005 +0100
-+++ b/Task.qml	2026-10-27 11:33:28.755978301 +0100
+--- a/Task.qml
++++ b/Task.qml
 @@ -15,7 +15,7 @@
  import org.kde.plasma.extras as PlasmaExtras
  import org.kde.plasma.components as PlasmaComponents3
@@ -27,7 +27,32 @@
              const smartLauncher = component.createObject(task);
              component.destroy();
  
-@@ -577,6 +579,29 @@
+@@ -477,6 +479,8 @@
+         }
+ 
+         imagePath: "widgets/tasks"
++        // Unsichtbar, zeichnen tut TaskIndicator; der Rahmen bleibt fuer Masse und DragHandler.
++        opacity: 0
+         property bool isHovered: task.highlighted && Plasmoid.configuration.taskHoverEffect
+         property string basePrefix: "normal"
+         prefix: isHovered ? TaskManagerApplet.TaskTools.taskPrefixHovered(basePrefix, Plasmoid.location) : TaskManagerApplet.TaskTools.taskPrefix(basePrefix, Plasmoid.location)
+@@ -525,6 +529,15 @@
+         }
+     }
+ 
++    TaskIndicator {
++        anchors.fill: frame
++        hovered: frame.isHovered
++        isWindow: task.model.IsWindow === true
++        active: task.model.IsActive === true
++        minimized: task.model.IsMinimized === true
++        attention: task.model.IsDemandingAttention === true || (task.smartLauncherItem !== null && task.smartLauncherItem.urgent === true)
++    }
++
+     Loader {
+         id: taskProgressOverlayLoader
+ 
+@@ -577,6 +590,31 @@
              enabled: true
  
              source: task.model.decoration
@@ -48,6 +73,8 @@
 +                tintStrength: task.model.IsLauncher
 +                    ? Plasmoid.configuration.tintStrength
 +                    : Plasmoid.configuration.tintStrengthOpen
++                // Von Haus aus dunkle Symbole, am Schirm abgeglichen.
++                lift: ({ "obsidian": 0.18, "steam": 0.2 })[task.appId] ?? 0.0
 +            }
 +
 +            HoverSpin {
