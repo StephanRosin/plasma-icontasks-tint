@@ -1,5 +1,5 @@
---- a/Task.qml	2026-09-15 16:45:20.740952881 +0200
-+++ b/Task.qml	2026-09-15 16:45:20.774179133 +0200
+--- a/Task.qml	2026-10-27 11:33:28.687958005 +0100
++++ b/Task.qml	2026-10-27 11:33:28.755978301 +0100
 @@ -15,7 +15,7 @@
  import org.kde.plasma.extras as PlasmaExtras
  import org.kde.plasma.components as PlasmaComponents3
@@ -9,7 +9,16 @@
  import org.kde.plasma.plasmoid
  
  import org.kde.taskmanager as TaskManager
-@@ -237,7 +237,7 @@
+@@ -54,6 +54,8 @@
+     readonly property int pid: model.AppPid
+     readonly property string appName: model.AppName
+     readonly property string appId: model.AppId
++    // Thunderbird hat das eigene Mail-Widget (~/plasma-leiste/mail), in der Taskleiste nicht noetig.
++    visible: appId !== "org.mozilla.Thunderbird" && appId !== "thunderbird"
+     readonly property bool isIcon: tasksRoot.iconsOnly || model.IsLauncher
+     property bool toolTipOpen: false
+     property bool inPopup: false
+@@ -238,7 +240,7 @@
  
      onSmartLauncherEnabledChanged: {
          if (smartLauncherEnabled && !smartLauncherItem) {
@@ -18,7 +27,7 @@
              const smartLauncher = component.createObject(task);
              component.destroy();
  
-@@ -571,6 +571,29 @@
+@@ -577,6 +579,29 @@
              enabled: true
  
              source: task.model.decoration
