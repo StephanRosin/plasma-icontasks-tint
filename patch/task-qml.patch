@@ -52,7 +52,24 @@
      Loader {
          id: taskProgressOverlayLoader
  
-@@ -577,6 +590,31 @@
+@@ -538,6 +551,16 @@
+     Loader {
+         id: iconBox
+ 
++        // Druckgefuehl wie bei iOS: beim Druecken kurz kleiner, beim Loslassen federt es zurueck.
++        // Auf iconBox statt icon, weil HoverSpin die Groesse des Symbols selbst animiert.
++        scale: leftTapHandler.pressed ? 0.9 : 1
++        Behavior on scale {
++            NumberAnimation {
++                duration: leftTapHandler.pressed ? Kirigami.Units.shortDuration : Kirigami.Units.longDuration
++                easing.type: leftTapHandler.pressed ? Easing.OutCubic : Easing.OutBack
++            }
++        }
++
+         anchors {
+             left: parent.left
+             leftMargin: adjustMargin(true, parent.width, taskFrame.margins.left)
+@@ -577,6 +600,31 @@
              enabled: true
  
              source: task.model.decoration
