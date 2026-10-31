@@ -63,6 +63,7 @@ qml_test() {
 
 test_hoverspin() { qml_test 'HoverSpin' "$ROOT/tests/qml/tst_hoverspin.qml"; }
 test_iconeffect() { qml_test 'IconEffect' "$ROOT/tests/qml/tst_iconeffect.qml"; }
+test_smartlauncher() { qml_test 'SmartLauncherItem' "$ROOT/tests/qml/tst_smartlauncher.qml"; }
 
 test_patch() {
     printf 'task-qml.patch\n'
@@ -357,9 +358,10 @@ case "${1:-all}" in
     extract)    test_extract ;;
     hoverspin)  test_hoverspin ;;
     iconeffect) test_iconeffect ;;
+    smartlauncher) test_smartlauncher ;;
     patch)      test_patch ;;
     migrate)    test_migrate ;;
-    all)        test_extract; test_hoverspin; test_iconeffect; test_patch; test_migrate ;;
+    all)        test_extract; test_hoverspin; test_iconeffect; test_smartlauncher; test_patch; test_migrate ;;
     *)          printf 'unbekannter Test: %s\n' "$1"; exit 2 ;;
 esac
 

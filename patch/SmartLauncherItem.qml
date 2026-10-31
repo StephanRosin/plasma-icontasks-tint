@@ -38,7 +38,9 @@ QtObject {
 
     // --- Antworten fuer TaskBadgeOverlay.qml und TaskProgressOverlay.qml ---
     property int count: 0
-    readonly property bool countVisible: count > 0
+    // isMailClient mitpruefen: Wechselt der Starter eines Eintrags weg von Thunderbird,
+    // wird count nicht mehr gelesen und bliebe sonst als Plakette am neuen Programm haengen.
+    readonly property bool countVisible: isMailClient && count > 0
     property real progress: 0
     property bool progressVisible: false
     property bool urgent: false
